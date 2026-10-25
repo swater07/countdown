@@ -6,30 +6,39 @@
   <title>倒數計時</title>
   <style>
     * { box-sizing: border-box; }
+
     body {
       font-family: Arial, "Microsoft JhengHei", sans-serif;
       background: #f0f4f8;
       margin: 0;
-      padding: 20px 12px;
+      padding: 15px 10px 70px;
+      display: flex;
+      justify-content: center;
     }
+
     .container {
-      max-width: 600px;
-      margin: 0 auto;
       background: white;
-      padding: 20px;
+      padding: 18px 14px;
       border-radius: 14px;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+      width: 100%;
+      max-width: 700px;
     }
-    h2 {
-      margin: 0 0 6px;
+
+    h1 {
+      text-align: center;
       font-size: 20px;
+      margin: 0 0 6px;
       color: #333;
     }
+
     .my-id {
+      text-align: center;
       color: #aaa;
       font-size: 11px;
       margin: 0 0 16px;
     }
+
     .row {
       display: flex;
       flex-wrap: wrap;
@@ -40,27 +49,17 @@
       border-radius: 10px;
       background: #fafbfc;
       border: 1px solid #eee;
+      transition: background 0.3s;
     }
-    .field {
-      width: 65px;
-      flex-shrink: 0;
-    }
-    .field label {
-      display: block;
-      font-size: 11px;
-      color: #888;
-      margin-bottom: 3px;
-    }
-    .field input {
-      width: 100%;
-      padding: 6px 8px;
-      font-size: 14px;
-      border: 2px solid #ddd;
-      border-radius: 7px;
-      outline: none;
-      background: white;
-    }
-    .field input:focus { border-color: #4a90e2; }
+
+    /* 星期底色 */
+    .row.week-0 { background: #ffe5e5; }
+    .row.week-1 { background: #e5f0ff; }
+    .row.week-2 { background: #e5f8e5; }
+    .row.week-3 { background: #fff8e5; }
+    .row.week-4 { background: #ffece0; }
+    .row.week-5 { background: #ffe5f0; }
+    .row.week-6 { background: #f0e5ff; }
 
     .row-number {
       font-size: 13px;
@@ -75,6 +74,30 @@
       flex-shrink: 0;
     }
 
+    .field {
+      width: 65px;
+      flex-shrink: 0;
+    }
+
+    .field label {
+      display: block;
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 3px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 14px;
+      border: 2px solid #ddd;
+      border-radius: 7px;
+      outline: none;
+      background: white;
+    }
+
+    .field input:focus { border-color: #4a90e2; }
+
     .btn-small {
       background: #ff5c5c;
       color: white;
@@ -86,13 +109,14 @@
       height: 34px;
       flex-shrink: 0;
     }
+
     .btn-small:hover { background: #e04444; }
 
     .result-cell {
       flex: 1 1 100%;
       margin-top: 6px;
       padding: 10px 12px;
-      background: #e8f8ef;
+      background: rgba(255, 255, 255, 0.6);
       border-left: 4px solid #28a745;
       border-radius: 7px;
       display: flex;
@@ -102,7 +126,7 @@
     }
 
     .result-cell .target {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: bold;
       color: #1e7e34;
       display: flex;
@@ -110,46 +134,53 @@
       align-items: baseline;
       gap: 8px;
     }
+
     .result-cell .weekday {
       font-size: 13px;
       color: #666;
       font-weight: normal;
     }
+
     .result-cell .countdown {
       font-size: 12px;
+      font-weight: normal;
       color: #999;
     }
+
     .result-cell .countdown.done {
       color: #bbb;
     }
+
     .result-cell.empty {
-      background: #f5f5f5;
+      background: rgba(255, 255, 255, 0.6);
       border-left-color: #ccc;
       color: #aaa;
       font-size: 13px;
     }
 
-    /* 星期底色 */
-    .row.week-0 { background: #ffe5e5; }
-    .row.week-1 { background: #e5f0ff; }
-    .row.week-2 { background: #e5f8e5; }
-    .row.week-3 { background: #fff8e5; }
-    .row.week-4 { background: #ffece0; }
-    .row.week-5 { background: #ffe5f0; }
-    .row.week-6 { background: #f0e5ff; }
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
 
     .btn {
-      padding: 10px 16px;
+      flex: 1;
+      min-width: 100px;
+      padding: 10px;
       font-size: 13px;
       border: none;
       border-radius: 9px;
       cursor: pointer;
       font-weight: bold;
-      margin-top: 10px;
-      margin-right: 6px;
     }
+
     .add-btn { background: #4a90e2; color: white; }
+    .add-btn:hover { background: #357abd; }
+
     .save-btn { background: #f39c12; color: white; }
+    .save-btn:hover { background: #d68910; }
 
     .all-times {
       margin-top: 24px;
@@ -158,11 +189,13 @@
       border-radius: 10px;
       border-left: 4px solid #3498db;
     }
+
     .all-times h3 {
       margin: 0 0 12px;
       font-size: 15px;
       color: #333;
     }
+
     .all-times .time-item {
       font-size: 15px;
       padding: 6px 0;
@@ -170,9 +203,11 @@
       color: #1e7e34;
       font-weight: bold;
     }
+
     .all-times .time-item:last-child {
       border-bottom: none;
     }
+
     .all-times .empty {
       color: #aaa;
       font-size: 13px;
@@ -182,18 +217,52 @@
       color: #888;
       font-size: 13px;
       margin-top: 10px;
+      text-align: center;
+    }
+
+    @media (max-width: 420px) {
+      .row-number {
+        font-size: 12px;
+        padding: 3px 6px;
+        height: 30px;
+      }
+
+      .field { width: 58px; }
+
+      .field input {
+        padding: 5px 6px;
+        font-size: 13px;
+      }
+
+      .btn-small {
+        padding: 6px 8px;
+        font-size: 11px;
+        height: 30px;
+      }
+
+      .result-cell .target { font-size: 17px; }
+      .result-cell .weekday { font-size: 12px; }
+      .result-cell .countdown { font-size: 11px; }
+
+      .btn {
+        font-size: 12px;
+        padding: 9px;
+        min-width: 80px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>我的倒數計時</h2>
+    <h1>我的倒數計時</h1>
     <p class="my-id">ID：<span id="myId">載入中...</span></p>
 
     <div id="list"></div>
 
-    <button class="btn add-btn" onclick="addItem()">＋ 新增一筆</button>
-    <button class="btn save-btn" onclick="saveToCloud()">💾 儲存</button>
+    <div class="btn-group">
+      <button class="btn add-btn" onclick="addItem()">＋ 新增一筆</button>
+      <button class="btn save-btn" onclick="saveToCloud()">💾 儲存</button>
+    </div>
 
     <p id="status"></p>
 
@@ -205,7 +274,7 @@
 
   <script>
     const BIN_ID = "6adceb93ffd5d1605388b6cd";
-    const ACCESS_KEY = "你的_X-Access-Key";
+    const ACCESS_KEY = "$2a$10$5hgKJKpDo5d.OF3d7t/M5.R8ezLu61Oq0EKfE18V9GTGm4Tk/ZF7K";
     const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
     function getUserId() {
@@ -285,13 +354,11 @@
         `;
 
         list.appendChild(row);
-
-        // 即時計算到達時間
-        updateRowResult(row, item);
+        updateRowResult(row);
       });
     }
 
-    function updateRowResult(row, item) {
+    function updateRowResult(row) {
       const days = parseInt(row.querySelector('.days').value) || 0;
       const hours = parseInt(row.querySelector('.hours').value) || 0;
       const minutes = parseInt(row.querySelector('.minutes').value) || 0;
@@ -305,7 +372,6 @@
         return;
       }
 
-      // 用「現在」當基準來計算
       const now = new Date();
       const target = new Date(now);
       target.setDate(target.getDate() + days);
@@ -319,7 +385,6 @@
       const hh = String(target.getHours()).padStart(2, '0');
       const mm = String(target.getMinutes()).padStart(2, '0');
 
-      // 星期底色
       row.classList.remove('week-0','week-1','week-2','week-3','week-4','week-5','week-6');
       row.classList.add('week-' + target.getDay());
 
@@ -407,17 +472,13 @@
       renderAllTimes();
     }
 
-    // 讓每一列的輸入框即時更新
     document.addEventListener('input', function (e) {
       if (e.target.matches('.days, .hours, .minutes')) {
         const row = e.target.closest('.row');
         if (row) {
-          const index = Array.from(document.querySelectorAll('.row')).indexOf(row);
-          if (index >= 0) {
-            collectData();
-            updateRowResult(row, items[index]);
-            renderAllTimes();
-          }
+          updateRowResult(row);
+          collectData();
+          renderAllTimes();
         }
       }
     });
