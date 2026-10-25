@@ -3,169 +3,689 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>所有人的資料</title>
+  <title>倒數計時器</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #f0f4f8; }
-    .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; }
-    .user-block {
-      margin-bottom: 24px; padding: 16px; background: #f8f9fa;
-      border-radius: 8px; border-left: 4px solid #3498db;
+    * { box-sizing: border-box; }
+    body {
+      font-family: Arial, "Microsoft JhengHei", sans-serif;
+      background: #f0f4f8;
+      margin: 0;
+      padding: 15px 10px 70px;
+      display: flex;
+      justify-content: center;
     }
-    .user-header {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 10px;
+    .container {
+      background: white;
+      padding: 18px 14px;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+      width: 100%;
+      max-width: 700px;
     }
-    .user-header input[type="checkbox"] {
-      width: 18px; height: 18px; cursor: pointer;
+    h1 { text-align: center; font-size: 20px; margin: 0 0 6px; color: #333; }
+    .subtitle { text-align: center; color: #888; margin-bottom: 16px; font-size: 13px; }
+    .my-id { text-align: center; color: #aaa; font-size: 11px; margin: 0 0 12px; }
+    .dirty-mark {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #e67e22; color: white; text-align: center;
+      font-size: 14px; font-weight: bold; padding: 12px;
+      display: none; z-index: 999; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.15);
     }
-    .user-id { font-size: 13px; color: #555; font-weight: bold; }
-    .item { padding: 8px; margin-bottom: 6px; background: white; border-radius: 6px; font-size: 14px; }
-    .btn-bar {
-      display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+    .dirty-mark.show { display: block; }
+    .row {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end;
+      margin-bottom: 10px; padding: 10px; border-radius: 10px;
+      background: #fafbfc; border: 1px solid #eee; transition: background 0.3s;
     }
-    .btn-bar button {
-      padding: 8px 16px; cursor: pointer; border: none;
-      border-radius: 6px; color: white; font-size: 13px;
+    .row.week-0 { background: #ffe5e5; }
+    .row.week-1 { background: #e5f0ff; }
+    .row.week-2 { background: #e5f8e5; }
+    .row.week-3 { background: #fff8e5; }
+    .row.week-4 { background: #ffece0; }
+    .row.week-5 { background: #ffe5f0; }
+    .row.week-6 { background: #f0e5ff; }
+    .row.nearest { border-color: #f5d76e; border-width: 2px; }
+    .row.urgent { animation: blink 1s infinite; border-color: #e74c3c; }
+    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+    .row-number {
+      font-size: 13px; font-weight: bold; color: #4a90e2; background: #eef6ff;
+      border-radius: 6px; padding: 4px 8px; height: 34px;
+      display: flex; align-items: center; flex-shrink: 0;
     }
-    .refresh-btn { background: #3498db; }
-    .refresh-btn:hover { background: #2980b9; }
-    .export-btn { background: #16a085; }
-    .export-btn:hover { background: #12876f; }
-    .select-all-btn { background: #6c757d; }
-    .select-all-btn:hover { background: #5a6268; }
-    .select-none-btn { background: #95a5a6; }
-    .select-none-btn:hover { background: #7f8c8d; }
+    .field { width: 65px; flex-shrink: 0; }
+    .field label { display: block; font-size: 11px; color: #888; margin-bottom: 3px; }
+    .field input {
+      width: 100%; padding: 6px 8px; font-size: 14px;
+      border: 2px solid #ddd; border-radius: 7px; outline: none; background: white;
+    }
+    .field input:focus { border-color: #4a90e2; }
+    .btn-small {
+      background: #6c757d; color: white; border: none; border-radius: 7px;
+      padding: 7px 10px; cursor: pointer; font-size: 12px; height: 34px; flex-shrink: 0;
+    }
+    .btn-small.reset { background: #f39c12; }
+    .btn-small.reset:hover { background: #d68910; }
+    .btn-small.remove { background: #ff5c5c; }
+    .btn-small.remove:hover { background: #e04444; }
+    .result-cell {
+      flex: 1 1 100%; margin-top: 6px; padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.6); border-left: 4px solid #28a745;
+      border-radius: 7px; display: flex; flex-direction: column; gap: 4px; line-height: 1.4;
+    }
+    .result-cell .target {
+      font-size: 20px; font-weight: bold; color: #1e7e34;
+      display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px;
+    }
+    .result-cell .weekday { font-size: 13px; color: #666; font-weight: normal; }
+    .result-cell .countdown { font-size: 12px; font-weight: normal; color: #999; }
+    .result-cell .countdown.done { color: #bbb; }
+    .result-cell .base { font-size: 11px; color: #888; }
+    .result-cell .base.today { color: #e74c3c; font-weight: bold; }
+    .result-cell.empty {
+      background: rgba(255, 255, 255, 0.6); border-left-color: #ccc;
+      color: #aaa; font-size: 13px;
+    }
+    .btn-group { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .btn {
+      flex: 1; min-width: 100px; padding: 10px; font-size: 13px;
+      border: none; border-radius: 9px; cursor: pointer; font-weight: bold;
+    }
+    .add-btn { background: #4a90e2; color: white; }
+    .save-btn { background: #f39c12; color: white; }
+    .load-btn { background: #9b59b6; color: white; }
+    .export-btn { background: #16a085; color: white; }
+    .json-btn { background: #8e44ad; color: white; }
+    .restore-btn { background: #c0392b; color: white; }
+    .sort-btn { background: #2c3e50; color: white; }
+    .sort-created-btn { background: #34495e; color: white; }
+    .danger-btn { background: #e74c3c; color: white; }
+    .now-box {
+      margin-top: 14px; padding: 10px; background: #eef6ff;
+      border-radius: 9px; font-size: 13px; color: #333; text-align: center;
+    }
+    .total-count {
+      margin-top: 10px; padding: 10px; background: #f8f9fa;
+      border-radius: 9px; font-size: 14px; color: #333;
+      text-align: center; font-weight: bold;
+    }
+    .all-times {
+      margin-top: 16px;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      border-left: 4px solid #3498db;
+    }
+    .all-times h3 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      color: #333;
+    }
+    .all-times .time-item {
+      font-size: 15px;
+      padding: 6px 0;
+      border-bottom: 1px dashed #ddd;
+      color: #1e7e34;
+      font-weight: bold;
+    }
+    .all-times .time-item:last-child {
+      border-bottom: none;
+    }
+    .all-times .empty {
+      color: #aaa;
+      font-size: 13px;
+    }
+    @media (max-width: 420px) {
+      .row-number { font-size: 12px; padding: 3px 6px; height: 30px; }
+      .field { width: 58px; }
+      .field input { padding: 5px 6px; font-size: 13px; }
+      .btn-small { padding: 6px 8px; font-size: 11px; height: 30px; }
+      .result-cell .target { font-size: 17px; }
+      .result-cell .weekday { font-size: 12px; }
+      .result-cell .countdown { font-size: 11px; }
+      .result-cell .base { font-size: 10px; }
+      .btn { font-size: 12px; padding: 9px; min-width: 80px; }
+      .total-count { font-size: 13px; }
+      .all-times .time-item { font-size: 14px; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>所有人的資料</h2>
+    <h1>倒數計時器</h1>
+    <p class="my-id">ID：<span id="myId">載入中...</span></p>
+    <div class="subtitle">資料同步至 Cloudflare</div>
 
-    <div class="btn-bar">
-      <button class="refresh-btn" onclick="load()">🔄 重新整理</button>
-      <button class="select-all-btn" onclick="selectAll(true)">☑️ 全選</button>
-      <button class="select-none-btn" onclick="selectAll(false)">☐ 全不選</button>
-      <button class="export-btn" onclick="exportSelected()">📦 匯出勾選的 JSON</button>
+    <div id="rowsContainer"></div>
+
+    <div class="btn-group">
+      <button class="btn add-btn" onclick="addRow()">＋ 新增一組</button>
+      <button class="btn sort-btn" onclick="sortByTarget()">🔄 依到達時間</button>
+      <button class="btn sort-created-btn" onclick="sortByBase()">🕒 依基準時間</button>
     </div>
 
-    <div id="list"></div>
+    <div class="btn-group">
+      <button class="btn save-btn" onclick="saveNow()">💾 儲存</button>
+      <button class="btn restore-btn" onclick="restoreBackup()">↩️ 還原上一筆</button>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn json-btn" onclick="saveFile()">📦 匯出 JSON</button>
+      <button class="btn load-btn" onclick="document.getElementById('fileInput').click()">📂 載入 JSON</button>
+      <button class="btn export-btn" onclick="exportTargetTimes()">📤 匯出時間</button>
+      <button class="btn danger-btn" onclick="clearAll()">🗑 清除</button>
+      <input type="file" id="fileInput" accept=".json" style="display:none" onchange="loadFile(event)">
+    </div>
+
+    <div class="now-box" id="nowBox"></div>
+    <div class="total-count" id="totalCount">目前總共 0 筆</div>
+
+    <div class="all-times">
+      <h3>所有到達時間</h3>
+      <div id="allTimes"></div>
+    </div>
   </div>
+
+  <div id="dirtyMark" class="dirty-mark">●未儲存，記得按「儲存」</div>
 
   <script>
     // 你的 Cloudflare Worker 網址
     const WORKER_URL = "https://tight-queen-e2b8.h1z1092904.workers.dev";
 
-    let lastData = {};
+    const BACKUP_KEY = 'countdown_data_v1_backup';
+    const MAX_ROWS = 100;
+    let tickTimer = null;
 
-    async function load() {
-      const list = document.getElementById('list');
-      list.innerHTML = '載入中...';
+    function getUserId() {
+      let id = localStorage.getItem('user_id');
+      if (!id) {
+        id = 'user_' + Math.random().toString(36).substring(2, 10);
+        localStorage.setItem('user_id', id);
+      }
+      return id;
+    }
+
+    let USER_ID;
+    try {
+      USER_ID = getUserId();
+      document.getElementById('myId').textContent = USER_ID;
+    } catch (e) {
+      document.getElementById('myId').textContent = '產生 ID 失敗';
+    }
+
+    function markDirty() { document.getElementById('dirtyMark').classList.add('show'); }
+    function clearDirty() { document.getElementById('dirtyMark').classList.remove('show'); }
+
+    function isToday(date) {
+      const now = new Date();
+      return date.getFullYear() === now.getFullYear() &&
+             date.getMonth() === now.getMonth() &&
+             date.getDate() === now.getDate();
+    }
+
+    function getNextId() {
+      let maxId = 0;
+      document.querySelectorAll('.row').forEach(row => {
+        const id = parseInt(row.dataset.id) || 0;
+        if (id > maxId) maxId = id;
+      });
+      return maxId + 1;
+    }
+
+    function updateTotalCount() {
+      const count = document.querySelectorAll('.row').length;
+      document.getElementById('totalCount').textContent = '目前總共 ' + count + ' 筆';
+    }
+
+    function updateRowNumbers() {
+      document.querySelectorAll('.row').forEach(row => {
+        const num = row.querySelector('.row-number');
+        if (num) num.textContent = '#' + (row.dataset.id || '?');
+      });
+    }
+
+    function addRow(data = null, save = true) {
+      if (document.querySelectorAll('.row').length >= MAX_ROWS) {
+        alert('已達最大筆數（' + MAX_ROWS + '）');
+        return;
+      }
+      const container = document.getElementById('rowsContainer');
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.dataset.id = (data && data.id) ? data.id : getNextId();
+
+      const d = data ? data.days : 0;
+      const h = data ? data.hours : 0;
+      const m = data ? data.minutes : 0;
+
+      row.innerHTML = `
+        <div class="row-number">#${row.dataset.id}</div>
+        <div class="field"><label>日</label><input type="number" class="days" value="${d}" min="0"></div>
+        <div class="field"><label>小時</label><input type="number" class="hours" value="${h}" min="0"></div>
+        <div class="field"><label>分</label><input type="number" class="minutes" value="${m}" min="0"></div>
+        <button class="btn-small reset" onclick="resetRow(this)">重設</button>
+        <button class="btn-small remove" onclick="removeRow(this)">刪除</button>
+        <div class="result-cell empty">尚未輸入</div>
+      `;
+
+      if (data && data.baseTime && data.targetTime) {
+        row.dataset.baseTime = data.baseTime;
+        row.dataset.targetTime = data.targetTime;
+      }
+
+      row.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', () => {
+          row.dataset.baseTime = '';
+          row.dataset.targetTime = '';
+          updateRowResult(row);
+          markDirty();
+        });
+      });
+
+      container.appendChild(row);
+      updateRemoveButtons();
+      updateTotalCount();
+      updateRowResult(row);
+      renderAllTimes();
+      if (save) markDirty();
+    }
+
+    function removeRow(btn) {
+      btn.parentElement.remove();
+      updateRemoveButtons();
+      updateTotalCount();
+      renderAllTimes();
+      markDirty();
+    }
+
+    function resetRow(btn) {
+      const row = btn.parentElement;
+      row.dataset.baseTime = '';
+      row.dataset.targetTime = '';
+      updateRowResult(row);
+      renderAllTimes();
+      markDirty();
+    }
+
+    function updateRemoveButtons() {
+      const rows = document.querySelectorAll('.row');
+      rows.forEach(row => {
+        const btn = row.querySelector('.remove');
+        btn.style.visibility = rows.length <= 1 ? 'hidden' : 'visible';
+      });
+    }
+
+    function clearAll() {
+      if (!confirm('確定要清除全部資料嗎？')) return;
+      const oldData = getData();
+      if (oldData.length > 0) {
+        localStorage.setItem(BACKUP_KEY, JSON.stringify(oldData));
+      }
+      document.getElementById('rowsContainer').innerHTML = '';
+      addRow(null, false);
+      saveNow();
+      updateTotalCount();
+      renderAllTimes();
+    }
+
+    function updateRowResult(row) {
+      const days = parseInt(row.querySelector('.days').value) || 0;
+      const hours = parseInt(row.querySelector('.hours').value) || 0;
+      const minutes = parseInt(row.querySelector('.minutes').value) || 0;
+      const cell = row.querySelector('.result-cell');
+
+      if (days === 0 && hours === 0 && minutes === 0) {
+        cell.className = 'result-cell empty';
+        cell.innerHTML = '尚未輸入';
+        row.dataset.targetTime = '';
+        row.dataset.baseTime = '';
+        row.classList.remove('urgent');
+        row.classList.remove('week-0','week-1','week-2','week-3','week-4','week-5','week-6');
+        return;
+      }
+
+      let baseTime, targetTime;
+      if (row.dataset.targetTime) {
+        targetTime = new Date(row.dataset.targetTime);
+        baseTime = row.dataset.baseTime ? new Date(row.dataset.baseTime) : null;
+      } else {
+        baseTime = new Date();
+        targetTime = new Date(baseTime);
+        targetTime.setDate(targetTime.getDate() + days);
+        targetTime.setHours(targetTime.getHours() + hours);
+        targetTime.setMinutes(targetTime.getMinutes() + minutes);
+        row.dataset.baseTime = baseTime.toISOString();
+        row.dataset.targetTime = targetTime.toISOString();
+      }
+
+      const year = targetTime.getFullYear();
+      const month = targetTime.getMonth() + 1;
+      const date = targetTime.getDate();
+      const weekDay = ['日', '一', '二', '三', '四', '五', '六'][targetTime.getDay()];
+      const hh = String(targetTime.getHours()).padStart(2, '0');
+      const mm = String(targetTime.getMinutes()).padStart(2, '0');
+
+      let baseStr = '';
+      let baseClass = 'base';
+      if (baseTime) {
+        baseStr = `基準：${baseTime.getFullYear()}/${baseTime.getMonth() + 1}/${baseTime.getDate()} ` +
+          `${String(baseTime.getHours()).padStart(2, '0')}:${String(baseTime.getMinutes()).padStart(2, '0')}`;
+        if (isToday(baseTime)) baseClass = 'base today';
+      }
+
+      const remain = getRemainText(targetTime);
+      const diffMs = targetTime - new Date();
+      if (diffMs > 0 && diffMs <= 24 * 60 * 60 * 1000) {
+        row.classList.add('urgent');
+      } else {
+        row.classList.remove('urgent');
+      }
+
+      row.classList.remove('week-0','week-1','week-2','week-3','week-4','week-5','week-6');
+      row.classList.add('week-' + targetTime.getDay());
+
+      cell.className = 'result-cell';
+      cell.innerHTML = `
+        <div class="target">
+          <span>${year}/${month}/${date} ${hh}:${mm}</span>
+          <span class="weekday">（${weekDay}）</span>
+        </div>
+        <div class="countdown ${remain.done ? 'done' : ''}">${remain.text}</div>
+        <div class="${baseClass}">${baseStr}</div>
+      `;
+
+      renderAllTimes();
+    }
+
+    function getRemainText(targetTime) {
+      const now = new Date();
+      let diff = targetTime - now;
+      if (diff <= 0) return { text: '已到達', done: true };
+      const totalSeconds = Math.floor(diff / 1000);
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      let text = '剩 ';
+      if (days > 0) text += `${days}日 `;
+      if (days > 0 || hours > 0) text += `${hours}時 `;
+      text += `${minutes}分${seconds}秒`;
+      return { text, done: false };
+    }
+
+    function removeExpiredRows() {
+      const rows = document.querySelectorAll('.row');
+      let removed = false;
+      rows.forEach(row => {
+        if (!row.dataset.targetTime) return;
+        const target = new Date(row.dataset.targetTime).getTime();
+        if (target <= Date.now()) {
+          row.remove();
+          removed = true;
+        }
+      });
+      if (removed) {
+        updateRemoveButtons();
+        updateTotalCount();
+        renderAllTimes();
+        markDirty();
+      }
+    }
+
+    function sortByTarget() {
+      const container = document.getElementById('rowsContainer');
+      const rows = Array.from(container.querySelectorAll('.row'));
+      rows.forEach(row => {
+        row.dataset.sortValue = row.dataset.targetTime ? new Date(row.dataset.targetTime).getTime() : Infinity;
+      });
+      rows.sort((a, b) => (parseFloat(a.dataset.sortValue) || Infinity) - (parseFloat(b.dataset.sortValue) || Infinity));
+      rows.forEach(row => container.appendChild(row));
+      rows.forEach(r => r.classList.remove('nearest'));
+      const validRows = rows.filter(r => r.dataset.targetTime);
+      if (validRows.length > 0) validRows[0].classList.add('nearest');
+      updateRowNumbers();
+      markDirty();
+    }
+
+    function sortByBase() {
+      const container = document.getElementById('rowsContainer');
+      const rows = Array.from(container.querySelectorAll('.row'));
+      rows.forEach(row => {
+        row.dataset.baseSortValue = row.dataset.baseTime ? new Date(row.dataset.baseTime).getTime() : 0;
+      });
+      rows.sort((a, b) => (parseFloat(b.dataset.baseSortValue) || 0) - (parseFloat(a.dataset.baseSortValue) || 0));
+      rows.forEach(row => container.appendChild(row));
+      rows.forEach(r => r.classList.remove('nearest'));
+      updateRowNumbers();
+      markDirty();
+    }
+
+    function tickAll() {
+      removeExpiredRows();
+      document.querySelectorAll('.row').forEach(row => {
+        if (row.dataset.targetTime) updateRowResult(row);
+      });
+      showNow();
+    }
+
+    function getData() {
+      const rows = Array.from(document.querySelectorAll('.row'));
+      return rows.map(row => ({
+        id: row.dataset.id || null,
+        days: parseInt(row.querySelector('.days').value) || 0,
+        hours: parseInt(row.querySelector('.hours').value) || 0,
+        minutes: parseInt(row.querySelector('.minutes').value) || 0,
+        baseTime: row.dataset.baseTime || null,
+        targetTime: row.dataset.targetTime || null
+      }));
+    }
+
+    async function saveNow() {
+      const data = getData();
+
+      // 1. 存本地
+      const oldData = JSON.parse(localStorage.getItem('countdown_data_current') || '[]');
+      if (oldData.length > 0) {
+        localStorage.setItem(BACKUP_KEY, JSON.stringify(oldData));
+      }
+      localStorage.setItem('countdown_data_current', JSON.stringify(data));
+
+      // 2. 存 Cloudflare
+      try {
+        // 先取得全部人的資料
+        const res = await fetch(`${WORKER_URL}?key=all-users`);
+        let allData = await res.json();
+        
+        // 如果雲端是空的，初始化為空物件
+        if (!allData || typeof allData !== 'object') allData = {};
+
+        // 更新自己的部分
+        allData[USER_ID] = data;
+
+        // 寫回 Cloudflare
+        await fetch(`${WORKER_URL}?key=all-users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(allData)
+        });
+
+        clearDirty();
+        alert('已儲存（手機 + Cloudflare）');
+      } catch (e) {
+        alert('雲端儲存失敗，但手機已儲存：' + e.message);
+      }
+    }
+
+    function restoreBackup() {
+      const backup = localStorage.getItem(BACKUP_KEY);
+      if (!backup) { alert('沒有上一筆備份'); return; }
+      if (!confirm('確定要還原上一筆儲存的資料嗎？目前的變更會遺失。')) return;
+
+      document.getElementById('rowsContainer').innerHTML = '';
+      try {
+        const data = JSON.parse(backup);
+        data.slice(0, MAX_ROWS).forEach(item => addRow(item, false));
+        if (data.length === 0) addRow(null, false);
+        updateRowNumbers();
+        updateTotalCount();
+        renderAllTimes();
+        clearDirty();
+        alert('已還原上一筆（請記得按「儲存」寫回雲端）');
+      } catch (e) {
+        alert('備份格式錯誤');
+      }
+    }
+
+    async function loadFromCloud() {
+      const oldKeyData = localStorage.getItem('countdown_data_v1');
+      if (oldKeyData && !localStorage.getItem('countdown_data_current')) {
+        try {
+          const oldData = JSON.parse(oldKeyData);
+          if (oldData.length > 0) {
+            localStorage.setItem('countdown_data_current', oldKeyData);
+          }
+        } catch (e) {}
+      }
+
+      const localData = localStorage.getItem('countdown_data_current');
+      let hasLocal = false;
+
+      if (localData) {
+        try {
+          const data = JSON.parse(localData);
+          if (data.length > 0) {
+            document.getElementById('rowsContainer').innerHTML = '';
+            data.slice(0, MAX_ROWS).forEach(item => addRow(item, false));
+            updateRowNumbers();
+            updateTotalCount();
+            renderAllTimes();
+            clearDirty();
+            hasLocal = true;
+          }
+        } catch (e) {}
+      }
+
+      if (!hasLocal) {
+        addRow(null, false);
+      }
 
       try {
         const res = await fetch(`${WORKER_URL}?key=all-users`);
         const allData = await res.json();
+        const cloudData = (allData && allData[USER_ID]) ? allData[USER_ID] : [];
 
-        lastData = allData || {};
-
-        const userIds = Object.keys(lastData);
-        if (userIds.length === 0) {
-          list.innerHTML = '<p>目前沒有資料</p>';
-          return;
+        if (!hasLocal && cloudData.length > 0) {
+          localStorage.setItem('countdown_data_current', JSON.stringify(cloudData));
+          document.getElementById('rowsContainer').innerHTML = '';
+          cloudData.slice(0, MAX_ROWS).forEach(item => addRow(item, false));
+          updateRowNumbers();
+          updateTotalCount();
+          renderAllTimes();
+          clearDirty();
         }
-
-        list.innerHTML = '';
-        const now = new Date();
-
-        userIds.forEach(uid => {
-          const items = lastData[uid];
-          if (!items || items.length === 0) return;
-
-          const block = document.createElement('div');
-          block.className = 'user-block';
-          block.dataset.uid = uid;
-
-          let html = `
-            <div class="user-header">
-              <input type="checkbox" class="user-checkbox" value="${uid}" checked>
-              <span class="user-id">${uid}</span>
-            </div>
-          `;
-
-          items.forEach((item, index) => {
-            const target = new Date(now);
-            target.setDate(target.getDate() + (item.days || 0));
-            target.setHours(target.getHours() + (item.hours || 0));
-            target.setMinutes(target.getMinutes() + (item.minutes || 0));
-
-            const diff = target - now;
-            const remain = formatRemain(diff);
-
-            html += `
-              <div class="item">
-                #${index + 1} ${target.getFullYear()}/${target.getMonth() + 1}/${target.getDate()} 
-                ${String(target.getHours()).padStart(2, '0')}:${String(target.getMinutes()).padStart(2, '0')}
-                <span style="color:#888;font-size:12px;">（${remain}）</span>
-              </div>
-            `;
-          });
-
-          block.innerHTML = html;
-          list.appendChild(block);
-        });
       } catch (e) {
-        list.innerHTML = '<p>載入失敗：' + e.message + '</p>';
+        console.error('雲端載入失敗', e);
       }
     }
 
-    function formatRemain(diffMs) {
-      if (diffMs <= 0) return '已到達';
-      const sec = Math.floor(diffMs / 1000);
-      const d = Math.floor(sec / 86400);
-      const h = Math.floor((sec % 86400) / 3600);
-      const m = Math.floor((sec % 3600) / 60);
-      let text = '剩 ';
-      if (d > 0) text += d + '日 ';
-      if (d > 0 || h > 0) text += h + '時 ';
-      text += m + '分';
-      return text;
-    }
-
-    function selectAll(checked) {
-      document.querySelectorAll('.user-checkbox').forEach(cb => {
-        cb.checked = checked;
-      });
-    }
-
-    function exportSelected() {
-      const checked = Array.from(document.querySelectorAll('.user-checkbox:checked'))
-        .map(cb => cb.value);
-
-      if (checked.length === 0) {
-        alert('請至少勾選一個人');
-        return;
-      }
-
-      const result = {};
-      checked.forEach(uid => {
-        if (lastData[uid]) {
-          result[uid] = lastData[uid];
-        }
-      });
-
-      const json = JSON.stringify(result, null, 2);
+    function saveFile() {
+      const data = getData();
+      const json = JSON.stringify(data, null, 2);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'selected-users-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.download = 'countdown-' + new Date().toISOString().slice(0, 10) + '.json';
       a.click();
-
       URL.revokeObjectURL(url);
     }
 
-    load();
-    setInterval(load, 30000);
+    function loadFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          document.getElementById('rowsContainer').innerHTML = '';
+          data.slice(0, MAX_ROWS).forEach(item => addRow(item, false));
+          if (data.length === 0) addRow(null, false);
+          updateRowNumbers();
+          updateTotalCount();
+          renderAllTimes();
+          markDirty();
+        } catch (err) {
+          alert('檔案格式錯誤');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function exportTargetTimes() {
+      const rows = Array.from(document.querySelectorAll('.row'));
+      const lines = [];
+      rows.forEach(row => {
+        if (row.dataset.targetTime) {
+          const id = row.dataset.id || '?';
+          const t = new Date(row.dataset.targetTime);
+          const year = t.getFullYear();
+          const month = String(t.getMonth() + 1).padStart(2, '0');
+          const date = String(t.getDate()).padStart(2, '0');
+          const weekDay = ['日', '一', '二', '三', '四', '五', '六'][t.getDay()];
+          const hh = String(t.getHours()).padStart(2, '0');
+          const mm = String(t.getMinutes()).padStart(2, '0');
+          lines.push(`#${id}  ${year}/${month}/${date}（${weekDay}）${hh}:${mm}`);
+        }
+      });
+      if (lines.length === 0) { alert('目前沒有到達時間可以匯出'); return; }
+      const text = lines.join('\n');
+      const blob = new Blob(['\uFEFF' + text], { type: 'text/plain;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '到達時間-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function renderAllTimes() {
+      const box = document.getElementById('allTimes');
+      const rows = Array.from(document.querySelectorAll('.row'));
+      const times = [];
+      rows.forEach(row => {
+        if (row.dataset.targetTime) {
+          times.push(new Date(row.dataset.targetTime));
+        }
+      });
+      times.sort((a, b) => a - b);
+      if (times.length === 0) {
+        box.innerHTML = '<div class="empty">目前沒有到達時間</div>';
+        return;
+      }
+      box.innerHTML = times.map(t => {
+        const year = t.getFullYear();
+        const month = t.getMonth() + 1;
+        const date = t.getDate();
+        const weekDay = ['日', '一', '二', '三', '四', '五', '六'][t.getDay()];
+        const hh = String(t.getHours()).padStart(2, '0');
+        const mm = String(t.getMinutes()).padStart(2, '0');
+        return `<div class="time-item">${year}/${month}/${date}（${weekDay}）${hh}:${mm}</div>`;
+      }).join('');
+    }
+
+    function showNow() {
+      const now = new Date();
+      document.getElementById('nowBox').innerHTML =
+        `現在：${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()} ` +
+        `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:` +
+        `${String(now.getSeconds()).padStart(2, '0')}`;
+    }
+
+    window.onload = function () {
+      loadFromCloud();
+      tickAll();
+      tickTimer = setInterval(tickAll, 1000);
+    };
   </script>
 </body>
 </html>
