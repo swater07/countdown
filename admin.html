@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>所有人的資料</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f0f4f8; }
+    .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; }
+    .user-block { margin-bottom: 24px; padding: 16px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db; }
+    .user-id { font-size: 12px; color: #888; margin-bottom: 8px; }
+    .item { padding: 8px; margin-bottom: 6px; background: white; border-radius: 6px; }
+    .refresh-btn { padding: 8px 16px; margin-bottom: 16px; cursor: pointer; background: #3498db; color: white; border: none; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>所有人的資料</h2>
+    <button class="refresh-btn" onclick="load()">🔄 重新整理</button>
+    <div id="list"></div>
+  </div>
+
+  <script>
+    const BIN_ID = "6adceb93ffd5d1605388b6cd";
+    const ACCESS_KEY = "$2a$10$5hgKJKpDo5d.OF3d7t/M5.R8ezLu61Oq0EKfE18V9GTGm4Tk/ZF7K"; // ← 換成你的 X-Access-Key
+    const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`;
+
+    async function load() {
+      const list = document.getElementById('list');
+      list.innerHTML = '載入中...';
+
+      try {
+        const res = await fetch(API_URL, {
+          headers: { 'X-Access-Key': ACCESS_KEY }
+        });
+        const json = await res.json();
+        const allData = (json.record && json.record.items) ? json.record.items : {};
+
+        const userIds = Object.keys(allData);
+        if (userIds.length === 0) {
+          list.innerHTML = '<p>目前沒有資料</p>';
+          return;
+        }
+
+        list.innerHTML = '';
+        const now = new Date();
+
+        userIds.forEach(uid => {
+          const items = allData[uid];
+          if (!items || items.length === 0) return;
+
+          const block = document.createElement('div');
+          block.className = 'user-block';
+
+          let html = `<div class="user-id">${uid}</div>`;
+
+          items.forEach((item, index) => {
+            const target = new Date(now);
+            target.setDate(target.getDate() + (item.days || 0));
+            target.setHours(target.getHours() + (item.hours || 0));
+            target.setMinutes(target.getMinutes() + (item.minutes || 0));
+
+            const diff = target - now;
+            const remain = formatRemain(diff);
+
+            html += `
+              <div class="item">
+                #${index + 1} ${target.getFullYear()}/${target.getMonth() + 1}/${target.getDate()} 
+                ${String(target.getHours()).padStart(2, '0')}:${String(target.getMinutes()).padStart(2, '0')}
+                <span style="color:#888;font-size:12px;">（${remain}）</span>
+              </div>
+            `;
+          });
+
+          block.innerHTML = html;
+          list.appendChild(block);
+        });
+      } catch (e) {
+        list.innerHTML = '<p>載入失敗：' + e.message + '</p>';
+      }
+    }
+
+    function formatRemain(diffMs) {
+      if (diffMs <= 0) return '已到達';
+      const sec = Math.floor(diffMs / 1000);
+      const d = Math.floor(sec / 86400);
+      const h = Math.floor((sec % 86400) / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      let text = '剩 ';
+      if (d > 0) text += d + '日 ';
+      if (d > 0 || h > 0) text += h + '時 ';
+      text += m + '分';
+      return text;
+    }
+
+    load();
+    setInterval(load, 30000);
+  </script>
+</body>
+</html>
