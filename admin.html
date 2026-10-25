@@ -52,9 +52,8 @@
   </div>
 
   <script>
-    const BIN_ID = "6adceb93ffd5d1605388b6cd";
-    const ACCESS_KEY = "$2a$10$5hgKJKpDo5d.OF3d7t/M5.R8ezLu61Oq0EKfE18V9GTGm4Tk/ZF7K";
-    const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`;
+    // 你的 Cloudflare Worker 網址
+    const WORKER_URL = "https://tight-queen-e2b8.h1z1092904.workers.dev";
 
     let lastData = {};
 
@@ -63,15 +62,12 @@
       list.innerHTML = '載入中...';
 
       try {
-        const res = await fetch(API_URL, {
-          headers: { 'X-Access-Key': ACCESS_KEY }
-        });
-        const json = await res.json();
-        const allData = (json.record && json.record.items) ? json.record.items : {};
+        const res = await fetch(`${WORKER_URL}?key=all-users`);
+        const allData = await res.json();
 
-        lastData = allData;
+        lastData = allData || {};
 
-        const userIds = Object.keys(allData);
+        const userIds = Object.keys(lastData);
         if (userIds.length === 0) {
           list.innerHTML = '<p>目前沒有資料</p>';
           return;
@@ -81,7 +77,7 @@
         const now = new Date();
 
         userIds.forEach(uid => {
-          const items = allData[uid];
+          const items = lastData[uid];
           if (!items || items.length === 0) return;
 
           const block = document.createElement('div');
@@ -134,14 +130,12 @@
       return text;
     }
 
-    // 全選 / 全不選
     function selectAll(checked) {
       document.querySelectorAll('.user-checkbox').forEach(cb => {
         cb.checked = checked;
       });
     }
 
-    // 匯出勾選的資料
     function exportSelected() {
       const checked = Array.from(document.querySelectorAll('.user-checkbox:checked'))
         .map(cb => cb.value);
