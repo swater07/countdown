@@ -53,6 +53,7 @@
 
   <script>
     // 你的 Cloudflare Worker 網址
+        // 你的 Cloudflare Worker 網址
     const WORKER_URL = "https://tight-queen-e2b8.h1z1092904.workers.dev";
 
     let lastData = {};
@@ -91,12 +92,18 @@
             </div>
           `;
 
-          items.forEach((item, index) => {
+          // === 新增：先計算每一筆的到達時間並排序 ===
+          const sortedItems = items.map(item => {
             const target = new Date(now);
             target.setDate(target.getDate() + (item.days || 0));
             target.setHours(target.getHours() + (item.hours || 0));
             target.setMinutes(target.getMinutes() + (item.minutes || 0));
+            return { ...item, targetTimeDate: target };
+          }).sort((a, b) => a.targetTimeDate - b.targetTimeDate); // 依時間先後排序
 
+          // 渲染排序後的結果
+          sortedItems.forEach((item, index) => {
+            const target = item.targetTimeDate;
             const diff = target - now;
             const remain = formatRemain(diff);
 
