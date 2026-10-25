@@ -111,10 +111,11 @@
           block.dataset.uid = uid;
 
           // 在標題旁邊加上改名按鈕
+                
           let html = `
             <div class="user-header">
               <input type="checkbox" class="user-checkbox" value="${uid}" checked>
-              <span class="user-id">${displayName}</span>
+              <span class="user-id">${displayName} (${uid})</span>
               <button class="rename-btn" onclick="renameUser('${uid}')">✏️ 改名</button>
             </div>
           `;
