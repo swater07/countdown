@@ -179,7 +179,6 @@
     <div class="now-box" id="nowBox"></div>
     <div class="total-count" id="totalCount">目前總共 0 筆</div>
 
-    <!-- 所有到達時間一覽 -->
     <div class="all-times">
       <h3>所有到達時間</h3>
       <div id="allTimes"></div>
@@ -190,10 +189,10 @@
 
   <script>
     const BIN_ID = "6adceb93ffd5d1605388b6cd";
-const ACCESS_KEY = "$2a$10$5hgKJKpDo5d.OF3d7t/M5.R8ezLu61Oq0EKfE18V9GTGm4Tk/ZF7K";
+    const ACCESS_KEY = "$2a$10$5hgKJKpDo5d.OF3d7t/M5.R8ezLu61Oq0EKfE18V9GTGm4Tk/ZF7K";
     const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
-    const BACKUP_KEY  = 'countdown_data_v1_backup';
+    const BACKUP_KEY = 'countdown_data_v1_backup';
     const MAX_ROWS = 100;
     let tickTimer = null;
 
@@ -205,8 +204,15 @@ const ACCESS_KEY = "$2a$10$5hgKJKpDo5d.OF3d7t/M5.R8ezLu61Oq0EKfE18V9GTGm4Tk/ZF7K
       }
       return id;
     }
-    const USER_ID = getUserId();
-    document.getElementById('myId').textContent = USER_ID;
+
+    let USER_ID;
+    try {
+      USER_ID = getUserId();
+      document.getElementById('myId').textContent = USER_ID;
+    } catch (e) {
+      document.getElementById('myId').textContent = '產生 ID 失敗';
+      console.error('ID 錯誤：', e);
+    }
 
     function markDirty() { document.getElementById('dirtyMark').classList.add('show'); }
     function clearDirty() { document.getElementById('dirtyMark').classList.remove('show'); }
@@ -477,6 +483,7 @@ const ACCESS_KEY = "$2a$10$5hgKJKpDo5d.OF3d7t/M5.R8ezLu61Oq0EKfE18V9GTGm4Tk/ZF7K
 
     async function saveNow() {
       const data = getData();
+
       const oldData = JSON.parse(localStorage.getItem('countdown_data_current') || '[]');
       if (oldData.length > 0) {
         localStorage.setItem(BACKUP_KEY, JSON.stringify(oldData));
@@ -501,9 +508,9 @@ const ACCESS_KEY = "$2a$10$5hgKJKpDo5d.OF3d7t/M5.R8ezLu61Oq0EKfE18V9GTGm4Tk/ZF7K
         });
 
         clearDirty();
-        alert('已儲存到雲端（上一筆已備份在手機）');
+        alert('已儲存（手機 + 雲端）');
       } catch (e) {
-        alert('儲存失敗：' + e.message);
+        alert('雲端儲存失敗，但手機已儲存：' + e.message);
       }
     }
 
@@ -528,37 +535,63 @@ const ACCESS_KEY = "$2a$10$5hgKJKpDo5d.OF3d7t/M5.R8ezLu61Oq0EKfE18V9GTGm4Tk/ZF7K
     }
 
     async function loadFromCloud() {
+      // 0. 檢查舊版 key，如果有資料就搬過來
+      const oldKeyData = localStorage.getItem('countdown_data_v1');
+      if (oldKeyData && !localStorage.getItem('countdown_data_current')) {
+        try {
+          const oldData = JSON.parse(oldKeyData);
+          if (oldData.length > 0) {
+            localStorage.setItem('countdown_data_current', oldKeyData);
+            console.log('已從舊版 key 搬移資料');
+          }
+        } catch (e) {}
+      }
+
+      // 1. 讀手機的 localStorage
+      const localData = localStorage.getItem('countdown_data_current');
+      let hasLocal = false;
+
+      if (localData) {
+        try {
+          const data = JSON.parse(localData);
+          if (data.length > 0) {
+            document.getElementById('rowsContainer').innerHTML = '';
+            data.slice(0, MAX_ROWS).forEach(item => addRow(item, false));
+            updateRowNumbers();
+            updateTotalCount();
+            renderAllTimes();
+            clearDirty();
+            hasLocal = true;
+          }
+        } catch (e) {}
+      }
+
+      // 2. 手機沒資料，先給一列空白
+      if (!hasLocal) {
+        addRow(null, false);
+      }
+
+      // 3. 背景讀雲端
       try {
         const res = await fetch(`${API_URL}/latest`, {
           headers: { 'X-Access-Key': ACCESS_KEY }
         });
         const json = await res.json();
         const allData = (json.record && json.record.items) ? json.record.items : {};
-        localStorage.setItem('countdown_data_current', JSON.stringify(allData[USER_ID] || []));
-        const data = allData[USER_ID] || [];
-        document.getElementById('rowsContainer').innerHTML = '';
-        data.slice(0, MAX_ROWS).forEach(item => addRow(item, false));
-        if (data.length === 0) addRow(null, false);
-        updateRowNumbers();
-        updateTotalCount();
-        renderAllTimes();
-        clearDirty();
+        const cloudData = allData[USER_ID] || [];
+
+        // 4. 只有手機沒資料，且雲端有資料時，才更新
+        if (!hasLocal && cloudData.length > 0) {
+          localStorage.setItem('countdown_data_current', JSON.stringify(cloudData));
+          document.getElementById('rowsContainer').innerHTML = '';
+          cloudData.slice(0, MAX_ROWS).forEach(item => addRow(item, false));
+          updateRowNumbers();
+          updateTotalCount();
+          renderAllTimes();
+          clearDirty();
+        }
       } catch (e) {
         console.error('雲端載入失敗', e);
-        const localData = localStorage.getItem('countdown_data_current');
-        if (localData) {
-          try {
-            const data = JSON.parse(localData);
-            document.getElementById('rowsContainer').innerHTML = '';
-            data.slice(0, MAX_ROWS).forEach(item => addRow(item, false));
-            if (data.length === 0) addRow(null, false);
-            updateRowNumbers();
-            updateTotalCount();
-            renderAllTimes();
-          } catch (e2) {}
-        } else {
-          addRow(null, false);
-        }
       }
     }
 
