@@ -11,7 +11,6 @@
     input[type="number"] { width: 60px; margin-right: 5px; }
     button { padding: 8px 16px; margin-top: 10px; cursor: pointer; }
 
-    /* 所有到達時間一覽 */
     .all-times {
       margin-top: 24px;
       padding: 16px;
@@ -38,17 +37,25 @@
       color: #aaa;
       font-size: 13px;
     }
+
+    /* ID 顯示 */
+    .my-id {
+      color: #aaa;
+      font-size: 11px;
+      margin: 0 0 12px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>我的倒數計時</h2>
+    <p class="my-id">ID：<span id="myId">載入中...</span></p>
+
     <div id="list"></div>
     <button onclick="addItem()">＋ 新增一筆</button>
     <button onclick="saveToCloud()" style="background:#f39c12; color:white; border:none;">💾 儲存</button>
     <p id="status" style="color: #888; font-size: 14px;"></p>
 
-    <!-- 所有到達時間一覽 -->
     <div class="all-times">
       <h3>所有到達時間</h3>
       <div id="allTimes"></div>
@@ -57,8 +64,7 @@
 
   <script>
     const BIN_ID = "6adceb93ffd5d1605388b6cd";
-    const ACCESS_KEY = "$2a$10$5hgKJKpDo5d.OF3d7t/M5.R8ezLu61Oq0EKfE18V9GTGm4Tk/ZF7K
-";
+    const ACCESS_KEY = "你的_X-Access-Key";
     const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
     function getUserId() {
@@ -73,6 +79,9 @@
     const USER_ID = getUserId();
     let items = [];
     let allData = {};
+
+    // 顯示 ID
+    document.getElementById('myId').textContent = USER_ID;
 
     async function loadFromCloud() {
       try {
@@ -125,7 +134,6 @@
       });
     }
 
-    // 只顯示到達時間
     function renderAllTimes() {
       const box = document.getElementById('allTimes');
       const now = new Date();
@@ -141,7 +149,6 @@
         times.push(target);
       });
 
-      // 排序
       times.sort((a, b) => a - b);
 
       if (times.length === 0) {
