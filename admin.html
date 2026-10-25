@@ -7,23 +7,56 @@
   <style>
     body { font-family: sans-serif; padding: 20px; background: #f0f4f8; }
     .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; }
-    .user-block { margin-bottom: 24px; padding: 16px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db; }
-    .user-id { font-size: 12px; color: #888; margin-bottom: 8px; }
-    .item { padding: 8px; margin-bottom: 6px; background: white; border-radius: 6px; }
-    .refresh-btn { padding: 8px 16px; margin-bottom: 16px; cursor: pointer; background: #3498db; color: white; border: none; border-radius: 6px; }
+    .user-block {
+      margin-bottom: 24px; padding: 16px; background: #f8f9fa;
+      border-radius: 8px; border-left: 4px solid #3498db;
+    }
+    .user-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 10px;
+    }
+    .user-header input[type="checkbox"] {
+      width: 18px; height: 18px; cursor: pointer;
+    }
+    .user-id { font-size: 13px; color: #555; font-weight: bold; }
+    .item { padding: 8px; margin-bottom: 6px; background: white; border-radius: 6px; font-size: 14px; }
+    .btn-bar {
+      display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .btn-bar button {
+      padding: 8px 16px; cursor: pointer; border: none;
+      border-radius: 6px; color: white; font-size: 13px;
+    }
+    .refresh-btn { background: #3498db; }
+    .refresh-btn:hover { background: #2980b9; }
+    .export-btn { background: #16a085; }
+    .export-btn:hover { background: #12876f; }
+    .select-all-btn { background: #6c757d; }
+    .select-all-btn:hover { background: #5a6268; }
+    .select-none-btn { background: #95a5a6; }
+    .select-none-btn:hover { background: #7f8c8d; }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>所有人的資料</h2>
-    <button class="refresh-btn" onclick="load()">🔄 重新整理</button>
+
+    <div class="btn-bar">
+      <button class="refresh-btn" onclick="load()">🔄 重新整理</button>
+      <button class="select-all-btn" onclick="selectAll(true)">☑️ 全選</button>
+      <button class="select-none-btn" onclick="selectAll(false)">☐ 全不選</button>
+      <button class="export-btn" onclick="exportSelected()">📦 匯出勾選的 JSON</button>
+    </div>
+
     <div id="list"></div>
   </div>
 
   <script>
     const BIN_ID = "6adceb93ffd5d1605388b6cd";
-    const ACCESS_KEY = "$2a$10$5hgKJKpDo5d.OF3d7t/M5.R8ezLu61Oq0EKfE18V9GTGm4Tk/ZF7K"; // ← 換成你的 X-Access-Key
+    const ACCESS_KEY = "$2a$10$5hgKJKpDo5d.OF3d7t/M5.R8ezLu61Oq0EKfE18V9GTGm4Tk/ZF7K";
     const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`;
+
+    let lastData = {};
 
     async function load() {
       const list = document.getElementById('list');
@@ -35,6 +68,8 @@
         });
         const json = await res.json();
         const allData = (json.record && json.record.items) ? json.record.items : {};
+
+        lastData = allData;
 
         const userIds = Object.keys(allData);
         if (userIds.length === 0) {
@@ -51,8 +86,14 @@
 
           const block = document.createElement('div');
           block.className = 'user-block';
+          block.dataset.uid = uid;
 
-          let html = `<div class="user-id">${uid}</div>`;
+          let html = `
+            <div class="user-header">
+              <input type="checkbox" class="user-checkbox" value="${uid}" checked>
+              <span class="user-id">${uid}</span>
+            </div>
+          `;
 
           items.forEach((item, index) => {
             const target = new Date(now);
@@ -91,6 +132,42 @@
       if (d > 0 || h > 0) text += h + '時 ';
       text += m + '分';
       return text;
+    }
+
+    // 全選 / 全不選
+    function selectAll(checked) {
+      document.querySelectorAll('.user-checkbox').forEach(cb => {
+        cb.checked = checked;
+      });
+    }
+
+    // 匯出勾選的資料
+    function exportSelected() {
+      const checked = Array.from(document.querySelectorAll('.user-checkbox:checked'))
+        .map(cb => cb.value);
+
+      if (checked.length === 0) {
+        alert('請至少勾選一個人');
+        return;
+      }
+
+      const result = {};
+      checked.forEach(uid => {
+        if (lastData[uid]) {
+          result[uid] = lastData[uid];
+        }
+      });
+
+      const json = JSON.stringify(result, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'selected-users-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.click();
+
+      URL.revokeObjectURL(url);
     }
 
     load();
