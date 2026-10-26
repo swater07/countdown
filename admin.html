@@ -120,8 +120,13 @@
             </div>
           `;
 
-          // 計算每一筆的到達時間並排序
+                  // 計算每一筆的到達時間並排序 (直接使用 index 算好的絕對時間)
           const sortedItems = items.map(item => {
+            // 如果雲端有存絕對時間，就直接用
+            if (item.targetTime) {
+              return { ...item, targetTimeDate: new Date(item.targetTime) };
+            }
+            // 如果沒有（例如舊資料），才用現在時間推算
             const target = new Date(now);
             target.setDate(target.getDate() + (item.days || 0));
             target.setHours(target.getHours() + (item.hours || 0));
@@ -129,7 +134,8 @@
             return { ...item, targetTimeDate: target };
           }).sort((a, b) => a.targetTimeDate - b.targetTimeDate);
 
-                    sortedItems.forEach((item, index) => {
+            const activeItems = sortedItems.filter(item => item.targetTimeDate > now);
+                    activeItems.forEach((item, index) => {
             const target = item.targetTimeDate;
             const diff = target - now;
             const remain = formatRemain(diff);
