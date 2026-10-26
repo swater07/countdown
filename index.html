@@ -281,21 +281,6 @@
           row.dataset.targetTime = '';
           updateRowResult(row);
           markDirty();
-          
-          // ★ 自動新增空白列邏輯 ★
-          const days = parseInt(row.querySelector('.days').value) || 0;
-          const hours = parseInt(row.querySelector('.hours').value) || 0;
-          const minutes = parseInt(row.querySelector('.minutes').value) || 0;
-          
-          // 如果這列有數字，且它剛好是「最後一列」
-          if (days > 0 || hours > 0 || minutes > 0) {
-            const container = document.getElementById('rowsContainer');
-            const rows = container.querySelectorAll('.row');
-            // 如果這一列是最後一列，就在下面補一列
-            if (rows[rows.length - 1] === row) {
-              addRow(null, false);
-            }
-          }
         });
       });
 
@@ -509,7 +494,7 @@
     }
 
     // ======== 雲端存取 ========
-    async function saveNow() {
+       async function saveNow() {
       const data = getData();
 
       const oldData = JSON.parse(localStorage.getItem('countdown_data_current') || '[]');
@@ -532,6 +517,23 @@
         });
 
         clearDirty();
+        
+        // ★ 儲存成功後，檢查最後一列是否已有數字 ★
+        const container = document.getElementById('rowsContainer');
+        const rows = container.querySelectorAll('.row');
+        
+        if (rows.length > 0) {
+          const lastRow = rows[rows.length - 1];
+          const days = parseInt(lastRow.querySelector('.days').value) || 0;
+          const hours = parseInt(lastRow.querySelector('.hours').value) || 0;
+          const minutes = parseInt(lastRow.querySelector('.minutes').value) || 0;
+          
+          // 如果最後一列已經有填寫數字，就自動補一列全新的空白列
+          if (days > 0 || hours > 0 || minutes > 0) {
+            addRow(null, false);
+          }
+        }
+
         alert('已儲存（手機 + Cloudflare）');
       } catch (e) {
         alert('雲端儲存失敗，但手機已儲存：' + e.message);
