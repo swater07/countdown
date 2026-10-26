@@ -281,6 +281,21 @@
           row.dataset.targetTime = '';
           updateRowResult(row);
           markDirty();
+          
+          // ★ 自動新增空白列邏輯 ★
+          const days = parseInt(row.querySelector('.days').value) || 0;
+          const hours = parseInt(row.querySelector('.hours').value) || 0;
+          const minutes = parseInt(row.querySelector('.minutes').value) || 0;
+          
+          // 如果這列有數字，且它剛好是「最後一列」
+          if (days > 0 || hours > 0 || minutes > 0) {
+            const container = document.getElementById('rowsContainer');
+            const rows = container.querySelectorAll('.row');
+            // 如果這一列是最後一列，就在下面補一列
+            if (rows[rows.length - 1] === row) {
+              addRow(null, false);
+            }
+          }
         });
       });
 
