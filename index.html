@@ -243,6 +243,7 @@
       });
     }
 
+    // ======== 核心：新增資料列 ========
     function addRow(data = null, save = true) {
       if (document.querySelectorAll('.row').length >= MAX_ROWS) {
         alert('已達最大筆數（' + MAX_ROWS + '）');
@@ -267,11 +268,13 @@
         <div class="result-cell empty">尚未輸入</div>
       `;
 
+      // 如果傳進來的資料已經有鎖定時間，直接寫入 dataset
       if (data && data.baseTime && data.targetTime) {
         row.dataset.baseTime = data.baseTime;
         row.dataset.targetTime = data.targetTime;
       }
 
+      // 監聽輸入事件（只要使用者動手改，就解除鎖定並重新計算）
       row.querySelectorAll('input').forEach(input => {
         input.addEventListener('input', () => {
           row.dataset.baseTime = '';
@@ -284,8 +287,11 @@
       container.appendChild(row);
       updateRemoveButtons();
       updateTotalCount();
+      
+      // 畫面渲染（如果有舊資料會直接顯示鎖定的時間）
       updateRowResult(row);
       renderAllTimes();
+      
       if (save) markDirty();
     }
 
@@ -327,12 +333,14 @@
       renderAllTimes();
     }
 
+    // ======== 核心：時間計算與渲染 ========
     function updateRowResult(row) {
       const days = parseInt(row.querySelector('.days').value) || 0;
       const hours = parseInt(row.querySelector('.hours').value) || 0;
       const minutes = parseInt(row.querySelector('.minutes').value) || 0;
       const cell = row.querySelector('.result-cell');
 
+      // 如果全部是 0，顯示尚未輸入
       if (days === 0 && hours === 0 && minutes === 0) {
         cell.className = 'result-cell empty';
         cell.innerHTML = '尚未輸入';
@@ -344,15 +352,21 @@
       }
 
       let baseTime, targetTime;
+
+      // ★★★ 絕對鎖死機制 ★★★
+      // 如果 row 裡面已經有 targetTime，就無條件使用它，絕對不重新計算！
       if (row.dataset.targetTime) {
         targetTime = new Date(row.dataset.targetTime);
         baseTime = row.dataset.baseTime ? new Date(row.dataset.baseTime) : null;
       } else {
+        // 只有在完全沒有資料時（例如剛新增或剛輸入完），才進行計算並立刻鎖死
         baseTime = new Date();
         targetTime = new Date(baseTime);
         targetTime.setDate(targetTime.getDate() + days);
         targetTime.setHours(targetTime.getHours() + hours);
         targetTime.setMinutes(targetTime.getMinutes() + minutes);
+        
+        // 寫入 dataset 鎖死
         row.dataset.baseTime = baseTime.toISOString();
         row.dataset.targetTime = targetTime.toISOString();
       }
@@ -479,29 +493,23 @@
       }));
     }
 
+    // ======== 雲端存取 ========
     async function saveNow() {
       const data = getData();
 
-      // 1. 存本地
       const oldData = JSON.parse(localStorage.getItem('countdown_data_current') || '[]');
       if (oldData.length > 0) {
         localStorage.setItem(BACKUP_KEY, JSON.stringify(oldData));
       }
       localStorage.setItem('countdown_data_current', JSON.stringify(data));
 
-      // 2. 存 Cloudflare
       try {
-        // 先取得全部人的資料
         const res = await fetch(`${WORKER_URL}?key=all-users`);
         let allData = await res.json();
-        
-        // 如果雲端是空的，初始化為空物件
         if (!allData || typeof allData !== 'object') allData = {};
 
-        // 更新自己的部分
         allData[USER_ID] = data;
 
-        // 寫回 Cloudflare
         await fetch(`${WORKER_URL}?key=all-users`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -587,6 +595,7 @@
       }
     }
 
+    // ======== 匯出與其他輔助功能 ========
     function saveFile() {
       const data = getData();
       const json = JSON.stringify(data, null, 2);
