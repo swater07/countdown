@@ -608,13 +608,38 @@
       URL.revokeObjectURL(url);
     }
 
-    function loadFile(event) {
+        function loadFile(event) {
       const file = event.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = function (e) {
         try {
-          const data = JSON.parse(e.target.result);
+          let data = JSON.parse(e.target.result);
+          
+          // === 新增：判斷是不是 admin 匯出的「多用戶物件」 ===
+          if (!Array.isArray(data) && typeof data === 'object') {
+            // 如果裡面有目前這台手機的 USER_ID，就把資料抓出來
+            if (data[USER_ID]) {
+              data = data[USER_ID];
+            } else {
+              // 如果沒有這台手機的 ID，檢查裡面是不是只有一個使用者
+              const keys = Object.keys(data);
+              if (keys.length === 1) {
+                data = data[keys[0]]; // 只有一個人的話，就直接載入他的
+              } else {
+                alert('匯入失敗：這個檔案包含多個使用者的資料，且找不到你的 ID (' + USER_ID + ')。');
+                return;
+              }
+            }
+          }
+
+          // 確保抓出來的是陣列
+          if (!Array.isArray(data)) {
+            alert('檔案格式錯誤');
+            return;
+          }
+
+          // === 開始載入資料 ===
           document.getElementById('rowsContainer').innerHTML = '';
           data.slice(0, MAX_ROWS).forEach(item => addRow(item, false));
           if (data.length === 0) addRow(null, false);
@@ -622,8 +647,9 @@
           updateTotalCount();
           renderAllTimes();
           markDirty();
+          
         } catch (err) {
-          alert('檔案格式錯誤');
+          alert('檔案解析失敗：' + err.message);
         }
       };
       reader.readAsText(file);
