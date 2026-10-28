@@ -303,12 +303,23 @@
       markDirty();
     }
 
-    function resetRow(btn) {
+       function resetRow(btn) {
       const row = btn.parentElement;
+      
+      // 1. 清空輸入框的數值
+      row.querySelector('.days').value = 0;
+      row.querySelector('.hours').value = 0;
+      row.querySelector('.minutes').value = 0;
+      
+      // 2. 清空鎖定的時間
       row.dataset.baseTime = '';
       row.dataset.targetTime = '';
+      
+      // 3. 更新畫面為「尚未輸入」
       updateRowResult(row);
       renderAllTimes();
+      
+      // 4. 標記為未儲存
       markDirty();
     }
 
