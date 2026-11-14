@@ -258,11 +258,15 @@
       const h = data ? data.hours : 0;
       const m = data ? data.minutes : 0;
 
-      row.innerHTML = `
+            row.innerHTML = `
         <div class="row-number">#${row.dataset.id}</div>
         <div class="field"><label>日</label><input type="number" class="days" value="${d}" min="0"></div>
         <div class="field"><label>小時</label><input type="number" class="hours" value="${h}" min="0"></div>
         <div class="field"><label>分</label><input type="number" class="minutes" value="${m}" min="0"></div>
+        <div class="field" style="flex: 1 1 100px; min-width: 100px;">
+          <label>備註</label>
+          <input type="text" class="note" value="${data && data.note ? data.note : ''}" placeholder="輸入備註..." style="width: 100%; border-color: #e0e0e0;">
+        </div>
         <button class="btn-small reset" onclick="resetRow(this)">重設</button>
         <button class="btn-small remove" onclick="removeRow(this)">刪除</button>
         <div class="result-cell empty">尚未輸入</div>
@@ -303,13 +307,14 @@
       markDirty();
     }
 
-       function resetRow(btn) {
+           function resetRow(btn) {
       const row = btn.parentElement;
       
       // 1. 清空輸入框的數值
       row.querySelector('.days').value = 0;
       row.querySelector('.hours').value = 0;
       row.querySelector('.minutes').value = 0;
+      row.querySelector('.note').value = ''; // ← 清空備註
       
       // 2. 清空鎖定的時間
       row.dataset.baseTime = '';
@@ -492,13 +497,14 @@
       showNow();
     }
 
-    function getData() {
+        function getData() {
       const rows = Array.from(document.querySelectorAll('.row'));
       return rows.map(row => ({
         id: row.dataset.id || null,
         days: parseInt(row.querySelector('.days').value) || 0,
         hours: parseInt(row.querySelector('.hours').value) || 0,
         minutes: parseInt(row.querySelector('.minutes').value) || 0,
+        note: row.querySelector('.note').value.trim(), // ← 加這行，把備註抓出來
         baseTime: row.dataset.baseTime || null,
         targetTime: row.dataset.targetTime || null
       }));
