@@ -725,28 +725,43 @@
       URL.revokeObjectURL(url);
     }
 
-    function renderAllTimes() {
+      function renderAllTimes() {
       const box = document.getElementById('allTimes');
       const rows = Array.from(document.querySelectorAll('.row'));
       const times = [];
+      
+      // 收集資料時，把備註也一起抓進來
       rows.forEach(row => {
         if (row.dataset.targetTime) {
-          times.push(new Date(row.dataset.targetTime));
+          times.push({
+            targetTime: new Date(row.dataset.targetTime),
+            note: row.querySelector('.note') ? row.querySelector('.note').value.trim() : ''
+          });
         }
       });
-      times.sort((a, b) => a - b);
+      
+      // 依照時間排序
+      times.sort((a, b) => a.targetTime - b.targetTime);
+      
       if (times.length === 0) {
         box.innerHTML = '<div class="empty">目前沒有到達時間</div>';
         return;
       }
-      box.innerHTML = times.map(t => {
+      
+      // 渲染畫面
+      box.innerHTML = times.map(item => {
+        const t = item.targetTime;
         const year = t.getFullYear();
         const month = t.getMonth() + 1;
         const date = t.getDate();
         const weekDay = ['日', '一', '二', '三', '四', '五', '六'][t.getDay()];
         const hh = String(t.getHours()).padStart(2, '0');
         const mm = String(t.getMinutes()).padStart(2, '0');
-        return `<div class="time-item">${year}/${month}/${date}（${weekDay}）${hh}:${mm}</div>`;
+        
+        // 如果有備註，就加上括號顯示
+        const noteStr = item.note ? ` <span style="color:#d35400; font-size:13px; font-weight:normal; margin-left:8px;">（${item.note}）</span>` : '';
+
+        return `<div class="time-item">${year}/${month}/${date}（${weekDay}）${hh}:${mm}${noteStr}</div>`;
       }).join('');
     }
 
