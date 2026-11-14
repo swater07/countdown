@@ -278,8 +278,8 @@
         row.dataset.targetTime = data.targetTime;
       }
 
-      // 監聽輸入事件（只要使用者動手改，就解除鎖定並重新計算）
-      row.querySelectorAll('input').forEach(input => {
+                 // 1. 監聽「時間」輸入事件：會解除鎖定並重新計算
+      row.querySelectorAll('.days, .hours, .minutes').forEach(input => {
         input.addEventListener('input', () => {
           row.dataset.baseTime = '';
           row.dataset.targetTime = '';
@@ -287,6 +287,14 @@
           markDirty();
         });
       });
+
+      // 2. 監聽「備註」輸入事件：只標記未儲存，絕對不動時間
+      const noteInput = row.querySelector('.note');
+      if (noteInput) {
+        noteInput.addEventListener('input', () => {
+          markDirty();
+        });
+      }
 
       container.appendChild(row);
       updateRemoveButtons();
